@@ -1,18 +1,61 @@
 use super::ast::*;
 
 pub fn run(i: &str) -> nom::IResult<&str, Vec<AstNode>> {
-    nom::multi::many0(lex_statement)(i)
+//    nom::multi::many0(lex_statement)(i)
+
+    nom::combinator::map(lex_function, |f: AstNode| vec!(f))(i)
 }
 
 pub fn lex_statement(i: &str) -> nom::IResult<&str, AstNode> {
     lex_function(i)
 }
 
+pub fn lex_identifier(i: &str) -> nom::IResult<&str, Identifier> {
+    nom::combinator::map(
+        nom::sequence::tuple((
+                nom::character::complete::alpha1,
+                skip_ws
+        )),
+        |(s, _)| Identifier { identifier: s.to_string() }
+    )(i)
+}
+
+pub fn lex_definition(i: &str) -> nom::IResult<&str, ()> {
+    nom::combinator::value((),
+        nom::sequence::tuple((
+                nom::bytes::complete::tag(":"),
+                skip_ws
+        ))
+    )(i)
+}
+
+pub fn lex_arrow(i: &str) -> nom::IResult<&str, ()> {
+    nom::combinator::value((),
+        nom::sequence::tuple((
+                nom::bytes::complete::tag("->"),
+                skip_ws
+        ))
+    )(i)
+}
+
+pub fn skip_ws(i: &str) -> nom::IResult<&str, &str> {
+    nom::character::complete::space0(i)
+}
+
+pub fn lex_identifier_str(i: &str) -> nom::IResult<&str, Vec<Identifier>> {
+    nom::multi::many1(lex_identifier)(i)
+}
+
 fn lex_function_typedef(i: &str) -> nom::IResult<&str, FunctionTypedef> {
-    Ok((i, FunctionTypedef {
-        parameter_type: Identifier { identifier: "".to_string() },
-        return_type: Identifier { identifier: "".to_string() }
-    }))
+    match nom::sequence::tuple((lex_identifier_str, lex_definition, lex_identifier_str, lex_arrow, lex_identifier_str))(i) {
+        Ok((i, (fn_name, _, param_type, _, return_type))) => {
+            Ok((i, FunctionTypedef {
+                parameter_type: param_type,
+                return_type: return_type,
+            }))
+        },
+        Err(e) => Err(e)
+    }
 }
 
 fn lex_function_body(i: &str) -> nom::IResult<&str, FunctionBody> {
@@ -64,9 +107,6 @@ pub fn lex_typedef(i: &str) -> nom::IResult<&str, Token> {
     nom::combinator::value(Token::TypeDefintion, nom::character::complete::char(':'))(i)
 }
 
-pub fn skip_ws(i: &str) -> nom::IResult<&str, &str> {
-    nom::character::complete::space0(i)
-}
 
 pub fn skip_nl(i: &str) -> nom::IResult<&str, &str> {
     nom::character::complete::line_ending(i)
@@ -82,10 +122,6 @@ pub fn lex_identifier(i: &str) -> nom::IResult<&str, Token> {
 pub fn lex_assign(i: &str) -> nom::IResult<&str, Token> {
     nom::combinator::value(Token::Assign, nom::bytes::complete::tag("="))(i)
 
-}
-
-pub fn lex_arrow(i: &str) -> nom::IResult<&str, Token> {
-    nom::combinator::value(Token::Arrow, nom::bytes::complete::tag("->"))(i)
 }
 
 pub fn lex_unbound(i: &str) -> nom::IResult<&str, Token> {

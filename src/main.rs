@@ -10,6 +10,8 @@ fn main() {
 
     let input = fs::read_to_string(&args[1]).unwrap();
 
+    println!("== Input ==\n{}\n==============\n\n\n", input);
+
     match parser::run(&input) {
         Ok((rem, token_lines)) => {
             for tokens in token_lines {
@@ -19,7 +21,7 @@ fn main() {
             println!();
             println!();
 
-            println!("============\n{}\n===========", rem);
+            println!("== Unparsed ==\n{}\n===========", rem);
         },
         Err(e) => {
             println!("Error!");

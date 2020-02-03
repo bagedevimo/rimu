@@ -1,4 +1,4 @@
-hello : Request -> Response -> Cmd msg
+hello : Request -> Cmd msg
 hello _ resp =
     newResp = Response.finalWrite "Hello" resp
 

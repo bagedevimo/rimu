@@ -20,8 +20,8 @@ pub struct Identifier {
 
 #[derive(Debug)]
 pub struct FunctionTypedef {
-    pub parameter_type : Identifier,
-    pub return_type : Identifier,
+    pub parameter_type : Vec<Identifier>,
+    pub return_type : Vec<Identifier>,
 }
 
 #[derive(Debug)]
